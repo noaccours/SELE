@@ -29,10 +29,24 @@ def get_driver():
     options.add_argument('--headless')
     options.add_argument(f"--window-size={width}x{height}")
     
-    service = Service()
-    driver = webdriver.Chrome(service=service, options=options)
+    # No need to specify chromedriver path
+    driver = webdriver.Chrome(options=options)
     
-    return webdriver.Chrome(service=service, options=options)
+    return driver
+
+@bot.message_handler(commands=['ss'])
+def send_screenshot(message):
+    chat_id = message.chat.id
+    bot.send_message(chat_id, "Please send the URL for which you want to capture the screenshot.")
+
+# Function to capture screenshot based on the URL provided
+@bot.message_handler(func=lambda message: True)
+def capture_screenshot(message):
+    chat_id = message.chat.id
+    app_url = message.text.strip()  # Get the URL from the message
+    screenshot_path = get_screenshot(app_url)
+    with open(screenshot_path, 'rb') as photo:
+        bot.send_photo(chat_id, photo)
 
 def get_screenshot(app_url):
     driver = get_driver()
@@ -40,8 +54,9 @@ def get_screenshot(app_url):
         driver.get(f"{app_url}/~/+/")
     else:
         driver.get(app_url)
-
-#time.sleep(3)
+    
+    # Add a delay to ensure page loading
+    time.sleep(3)
     
     # Capture the screenshot
     screenshot_path = 'screenshot.png'
@@ -52,18 +67,5 @@ def get_screenshot(app_url):
     
     return screenshot_path
 
-# Example usage
-app_url = 'https://facebook.com'  # Set the URL you want to capture
-print("Success")
-screenshot_path = get_screenshot(app_url)
-
-# Sending the screenshot to Telegram
-@bot.message_handler(commands=['ss'])
-def send_screenshot(message):
-    chat_id = message.chat.id
-    with open(screenshot_path, 'rb') as photo:
-        bot.send_photo(chat_id, photo)
-
 # Start the bot
 bot.polling()
-
